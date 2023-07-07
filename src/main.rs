@@ -48,15 +48,21 @@ unsafe extern "system" fn win_event_hook_callback(
     _thread_id: u32,
     _timestamp: u32,
 ) {
-    get_window_title(_window_handle);    
+    let result = get_window_title(_window_handle);    
+    
+    match result{
+        Ok(title) => println!("Event received: title: {}", title),
+        Err(_) => ()
+    }    
 }
 
-fn get_window_title(hwnd: HWND) {
+fn get_window_title(hwnd: HWND) -> Result<String, ()> {
     let title: String;
     unsafe {
         let mut v: Vec<u16> = vec![0; 255];
         let title_len = GetWindowTextW(hwnd, &mut v);
-        title = String::from_utf16_lossy(&v[0..(title_len as usize)]);
-        println!("Event received: title: {}", title)
+        title = String::from_utf16_lossy(&v[0..(title_len as usize)]);        
     };    
+
+    Ok(title)
 }
