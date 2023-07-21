@@ -1,0 +1,15 @@
+[package]
+name = "appkit-nsworkspace-bindings"
+version = "0.1.1"
+edition = "2021"
+authors = ["Dmitry Malkov <dmitry.malkov@live.com>"]
+license = "MIT OR Apache-2.0"
+keywords = ["appkit", "nsworkspace", "macos", "nsrunningapplication"]
+description = "AppKit NSWorkspace bindings"
+repository = "https://github.com/dimusic/active-win-pos-rs"
+
+[target.'cfg(target_os = "macos")'.build-dependencies]
+bindgen = "0.60.1"
+
+[target.'cfg(target_os = "macos")'.dependencies]
+objc = "0.2"
