@@ -1,5 +1,2 @@
-mod tracker;
-
-pub fn start_tracking() {
-    tracker::start_tracking();
-}
+pub mod tracker;
+pub mod window_position;

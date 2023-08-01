@@ -1,18 +1,24 @@
-use windows::Win32::Foundation::RECT;
-
-use crate::common::window_position::WindowPosition;
-
-pub trait FromWinRect {
-    fn from_win_rect(rect: &RECT) -> WindowPosition;
+#[derive(Debug, Clone, PartialEq)]
+pub struct WindowPosition {
+    pub x: f64,
+    pub y: f64,
+    pub width: f64,
+    pub height: f64,
 }
 
-impl FromWinRect for WindowPosition {
-    fn from_win_rect(rect: &RECT) -> Self {
-        WindowPosition {
-            x: rect.left as f64,
-            y: rect.top as f64,
-            width: (rect.right - rect.left) as f64,
-            height: (rect.bottom - rect.top) as f64,
+impl WindowPosition {
+    pub fn new(x: f64, y: f64, w: f64, h: f64) -> Self {
+        Self {
+            x,
+            y,
+            width: w,
+            height: h,
         }
+    }
+}
+
+impl Default for WindowPosition {
+    fn default() -> Self {
+        Self::new(0.0, 0.0, 0.0, 0.0)
     }
 }

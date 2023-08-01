@@ -4,7 +4,7 @@ use windows::{
     core::{HSTRING, PCWSTR, PWSTR},
     w,
     Win32::{
-        Foundation::{CloseHandle, HANDLE, HWND, MAX_PATH},
+        Foundation::{CloseHandle, HANDLE, HWND, RECT, MAX_PATH},
         Storage::FileSystem::{GetFileVersionInfoSizeW, GetFileVersionInfoW, VerQueryValueW},
         System::Threading::{
             OpenProcess, QueryFullProcessImageNameW, PROCESS_NAME_WIN32,
@@ -13,14 +13,14 @@ use windows::{
         UI::{
             Accessibility::{SetWinEventHook, HWINEVENTHOOK},
             WindowsAndMessaging::{
-                GetWindowTextW, GetWindowThreadProcessId, MessageBoxW, EVENT_SYSTEM_FOREGROUND,
+                GetWindowTextW, GetWindowThreadProcessId, GetWindowRect, MessageBoxW, EVENT_SYSTEM_FOREGROUND,
                 MB_OK, WINEVENT_OUTOFCONTEXT,
             },
         },
     },
 };
 
-use crate::{common::platform_api::PlatformApi, ActiveWindow, WindowPosition};
+use super::super::{common::active_window::ActiveWindow, common::window_position::WindowPosition};
 
 use super::window_position::FromWinRect;
 
@@ -57,15 +57,17 @@ pub fn start_tracking() {
     };
 }
 
-unsafe extern "system" fn win_event_hook_callback(
+unsafe extern "system" fn win_event_hook_callback (
     _hook_handle: HWINEVENTHOOK,
     _event_id: u32,
     _window_handle: HWND,
     _object_id: i32,
     _child_id: i32,
     _thread_id: u32,
-    _timestamp: u32,
+    _timestamp: u32
 ) {
+    let win_position = get_foreground_window_position(_window_handle)?;
+    let active_window_position = WindowPosition::from_win_rect(&win_position);
     let active_window_title = get_window_title(_window_handle)?;
     let mut process_id: u32 = 0;
     unsafe { GetWindowThreadProcessId(_window_handle, Some(&mut process_id as *mut u32)) };
@@ -77,11 +79,24 @@ unsafe extern "system" fn win_event_hook_callback(
         title: active_window_title,
         process_path: process_path.clone(),
         app_name,
+        position: active_window_position,
         process_id: process_id as u64,
         window_id: format!("{:?}", _window_handle),
     };
 
     println!("active window: {:#?}", active_window);
+}
+
+fn get_foreground_window_position(hwnd: HWND) -> Result<RECT, ()> {
+    unsafe {
+        let mut rect: RECT = std::mem::zeroed();
+
+        if GetWindowRect(hwnd, &mut rect).as_bool() {
+            Ok(rect)
+        } else {
+            Err(())
+        }
+    }
 }
 
 fn get_window_title(hwnd: HWND) -> Result<String, ()> {
