@@ -4,7 +4,7 @@ use windows::{
     core::{HSTRING, PCWSTR, PWSTR},
     w,
     Win32::{
-        Foundation::{CloseHandle, HANDLE, HWND, RECT, MAX_PATH},
+        Foundation::{CloseHandle, HANDLE, HWND, MAX_PATH, RECT},
         Storage::FileSystem::{GetFileVersionInfoSizeW, GetFileVersionInfoW, VerQueryValueW},
         System::Threading::{
             OpenProcess, QueryFullProcessImageNameW, PROCESS_NAME_WIN32,
@@ -13,8 +13,8 @@ use windows::{
         UI::{
             Accessibility::{SetWinEventHook, HWINEVENTHOOK},
             WindowsAndMessaging::{
-                GetWindowTextW, GetWindowThreadProcessId, GetWindowRect, MessageBoxW, EVENT_SYSTEM_FOREGROUND,
-                MB_OK, WINEVENT_OUTOFCONTEXT,
+                GetWindowRect, GetWindowTextW, GetWindowThreadProcessId, MessageBoxW,
+                EVENT_SYSTEM_FOREGROUND, MB_OK, WINEVENT_OUTOFCONTEXT,
             },
         },
     },
@@ -57,15 +57,35 @@ pub fn start_tracking() {
     };
 }
 
-unsafe extern "system" fn win_event_hook_callback (
+unsafe extern "system" fn win_event_hook_callback(
     _hook_handle: HWINEVENTHOOK,
     _event_id: u32,
     _window_handle: HWND,
     _object_id: i32,
     _child_id: i32,
     _thread_id: u32,
-    _timestamp: u32
+    _timestamp: u32,
 ) {
+    let _ = capture_active_window(
+        _hook_handle,
+        _event_id,
+        _window_handle,
+        _object_id,
+        _child_id,
+        _thread_id,
+        _timestamp,
+    );
+}
+
+fn capture_active_window(
+    _hook_handle: HWINEVENTHOOK,
+    _event_id: u32,
+    _window_handle: HWND,
+    _object_id: i32,
+    _child_id: i32,
+    _thread_id: u32,
+    _timestamp: u32,
+) -> Result<i32, ()> {
     let win_position = get_foreground_window_position(_window_handle)?;
     let active_window_position = WindowPosition::from_win_rect(&win_position);
     let active_window_title = get_window_title(_window_handle)?;
@@ -85,6 +105,7 @@ unsafe extern "system" fn win_event_hook_callback (
     };
 
     println!("active window: {:#?}", active_window);
+    Ok(1i32)
 }
 
 fn get_foreground_window_position(hwnd: HWND) -> Result<RECT, ()> {
